@@ -8,7 +8,8 @@
   },
   "scripts": {
     "parse": "node parse-failures.js",
-    "clean": "node clean-html-blocks.js"
+    "clean": "node clean-html-blocks.js",
+    "reset": "rm -rf ./junit-reports/*"
   },
   "keywords": [
     "junit",
