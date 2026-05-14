@@ -1,0 +1,138 @@
+milestone_id: m2
+name: "Markdown Generation & HTML Cleaning"
+
+style_anchors:
+  - path: parse-failures.js
+    lines: "173-249"
+    pattern: "Group failures by file, generate markdown checklist with checkboxes"
+  - path: parse-failures.js
+    lines: "97-148"
+    pattern: "Strip HTML blocks and ANSI codes from failure messages"
+
+global_constraints:
+  dependencies:
+    only_use:
+      - fmt
+      - regexp
+      - strings
+      - sort
+  file_scope:
+    root: "."
+    stop_if_unexpected_files: true
+  validation:
+    commands:
+      - "go build ./..."
+      - "go test ./... -v"
+      - "go vet ./..."
+    expected_output: "All tests passing, 0 vet errors"
+    failure_handling: "STOP. Fix errors before continuing."
+
+tasks:
+  - id: t-m2-001
+    name: "Implement cleanHTMLBlocks"
+    estimate_minutes: 45
+    files:
+      touch_only:
+        - generator.go
+        - generator_test.go
+    style_anchors:
+      - path: parse-failures.js
+        lines: "97-148"
+        pattern: "Line-by-line HTML block detection, ANSI code stripping, block skipping"
+    instructions: |
+      ## CRITICAL CONSTRAINTS
+      - ONLY modify: generator.go, generator_test.go
+      - ONLY use stdlib: strings, regexp, fmt
+      - MUST pass: go test ./... -v, go vet ./...
+
+      ## Style Anchors
+      See parse-failures.js:97-148 for the exact cleaning algorithm:
+      1. Detect lines containing `[36m<html>[39m` or `[36m<html>` → start of HTML block
+      2. Detect lines containing `[36m</html>[39m` or `</html>[39m` → end of HTML block
+      3. Skip all lines inside HTML blocks
+      4. Skip lines containing "Ignored nodes: comments, script, style"
+      5. Strip ANSI color codes via regex `\[\d+m`
+      6. Skip lines that are empty/whitespace after cleaning
+
+      ## TDD Checklist
+      - [ ] Write failing test: input with HTML block → block removed
+      - [ ] Implement cleanHTMLBlocks(text string) string
+      - [ ] Verify test passes
+      - [ ] Add test: input with ANSI codes → codes stripped
+      - [ ] Add test: input with "Ignored nodes" line → line removed
+      - [ ] Add test: clean input → unchanged
+      - [ ] Add test: empty input → empty output
+      - [ ] Add test: multiple HTML blocks → all removed
+      - [ ] Verify all tests pass
+
+      ## Drift Policy
+      STOP if: files touched >2, new dependencies introduced
+
+      ## Validation
+      go test ./... -v && go vet ./...
+    validation:
+      commands:
+        - "go test ./... -v"
+        - "go vet ./..."
+      expected_output: "All tests passing, 0 vet errors"
+      failure_handling: "STOP. Revise implementation to pass tests."
+
+  - id: t-m2-002
+    name: "Implement generateChecklist"
+    estimate_minutes: 90
+    files:
+      touch_only:
+        - generator.go
+        - generator_test.go
+    style_anchors:
+      - path: parse-failures.js
+        lines: "173-249"
+        pattern: "Markdown generation: header, AI instructions, grouped failures, checkboxes"
+    instructions: |
+      ## CRITICAL CONSTRAINTS
+      - ONLY modify: generator.go, generator_test.go
+      - ONLY use stdlib: fmt, strings, sort
+      - MUST pass: go test ./... -v, go vet ./...
+      - Output MUST match the JS implementation's markdown format exactly
+
+      ## Style Anchors
+      See parse-failures.js:173-249 for the exact markdown format:
+      1. Empty failures → return "✓ No test failures found!\n"
+      2. Header: "# Test Failures Checklist\n\n"
+      3. AI instructions section (exact text from JS lines 184-209)
+      4. "---\n\n" separator
+      5. Group failures by file (using map reduce pattern)
+      6. Per-group: "## {file}\n\n" heading
+      7. Per-failure: "- [ ] **{file}**\n\n  - **Test:** {test}\n  - **Error:**\n    - {line}\n"
+      8. Footer: "\n**Total failures: {count}**\n"
+      9. Run cleanHTMLBlocks on the final output
+
+      ## TDD Checklist
+      - [ ] Write failing test: empty failures → "✓ No test failures found!"
+      - [ ] Implement generateChecklist(failures []parser.Failure) string
+      - [ ] Verify test passes
+      - [ ] Add test: single failure → correct markdown with checkbox, test name, error
+      - [ ] Add test: multiple failures in same file → grouped under one heading
+      - [ ] Add test: failures across multiple files → separate headings per file
+      - [ ] Add test: multi-line error message → each line as bullet point
+      - [ ] Add test: failure message with HTML blocks → cleaned in output
+      - [ ] Verify total failures count in footer matches
+      - [ ] Verify all tests pass
+
+      ## Key Behavior
+      - Message lines split on \n, filtered for non-empty, each becomes a bullet
+      - Failures grouped by File field using a map, then iterated
+      - Group iteration order should be deterministic (sort by file name)
+      - cleanHTMLBlocks applied to the final assembled markdown
+
+      ## Drift Policy
+      STOP if: files touched >2, new dependencies, tests fail
+
+      ## Validation
+      go test ./... -v && go vet ./...
+    validation:
+      commands:
+        - "go test ./... -v"
+        - "go vet ./..."
+      expected_output: "All tests passing, 0 vet errors"
+      failure_handling: "STOP. Revise implementation to pass tests."

@@ -1,0 +1,169 @@
+milestone_id: m3
+name: "CLI with Kong, Integration, and Distribution"
+
+style_anchors:
+  - path: parse-failures.js
+    lines: "270-289"
+    pattern: "CLI entrypoint: read args, resolve paths, call parser + generator, write output"
+
+global_constraints:
+  dependencies:
+    only_use:
+      - github.com/alecthomas/kong
+      - github.com/validkeys/junit-to-checklist (internal)
+      - os
+      - path/filepath
+      - fmt
+  file_scope:
+    root: "."
+    stop_if_unexpected_files: true
+  validation:
+    commands:
+      - "go build -o junit-to-checklist ."
+      - "go test ./... -v"
+      - "go vet ./..."
+    expected_output: "Build succeeds, all tests passing, 0 vet errors"
+    failure_handling: "STOP. Fix errors before continuing."
+
+tasks:
+  - id: t-m3-001
+    name: "Wire Kong CLI with path argument and output flag"
+    estimate_minutes: 60
+    files:
+      touch_only:
+        - main.go
+        - main_test.go
+    style_anchors:
+      - path: parse-failures.js
+        lines: "270-289"
+        pattern: "main(): read arg, validate path, parse, generate, write output"
+    instructions: |
+      ## CRITICAL CONSTRAINTS
+      - ONLY modify: main.go, main_test.go, go.mod, go.sum
+      - ONLY add dependency: github.com/alecthomas/kong
+      - MUST pass: go build ./..., go test ./... -v, go vet ./...
+
+      ## Style Anchors
+      See parse-failures.js:270-289 for the CLI flow:
+      1. Read path from args (line 271)
+      2. Validate path exists (line 274)
+      3. Parse reports (line 281)
+      4. Generate checklist (line 282)
+      5. Write output file (line 285)
+
+      ## TDD Checklist
+      - [ ] Run `go get github.com/alecthomas/kong`
+      - [ ] Write failing test: CLI with valid XML file → produces failing-tests.md
+      - [ ] Define Kong CLI struct in main.go
+      - [ ] Implement run() function that wires parser → generator → file write
+      - [ ] Implement output path resolution:
+        - If -o flag provided → use that path
+        - If input is a directory → write to {dir}/failing-tests.md
+        - If input is a file → write to {file's dir}/failing-tests.md
+      - [ ] Verify test passes
+      - [ ] Add test: non-existent path → error exit
+      - [ ] Add test: -o flag → writes to specified path
+      - [ ] Add test: --help → shows usage with path arg and -o flag
+      - [ ] Verify all tests pass
+
+      ## Kong CLI Structure
+      ```go
+      var cli struct {
+          Path   string `arg:"" name:"path" help:"XML file or directory containing JUnit XML reports" type:"path"`
+          Output string `short:"o" help:"Output file path (default: failing-tests.md in input directory)" type:"path"`
+      }
+      ```
+
+      ## Key Behavior
+      - Path is required (no default — user must be explicit)
+      - Output resolves relative to input location if not specified
+      - On success: print "Generated {output} with {n} failure(s)" to stdout
+      - On no failures: print "✓ No test failures found!" and still write the file
+      - On error: print to stderr, exit code 1
+
+      ## Drift Policy
+      STOP if: files touched >4 (main.go, main_test.go, go.mod, go.sum), new deps beyond kong
+
+      ## Validation
+      go build -o junit-to-checklist . && go test ./... -v && go vet ./...
+    validation:
+      commands:
+        - "go build -o junit-to-checklist ."
+        - "go test ./... -v"
+        - "go vet ./..."
+      expected_output: "Build succeeds, all tests passing, 0 vet errors"
+      failure_handling: "STOP. Revise implementation to pass tests."
+
+  - id: t-m3-002
+    name: "Integration tests and build verification"
+    estimate_minutes: 60
+    dependencies: [t-m3-001]
+    files:
+      touch_only:
+        - main_test.go
+        - testdata/integration/
+    instructions: |
+      ## CRITICAL CONSTRAINTS
+      - ONLY modify: main_test.go, testdata/
+      - MUST pass: go test ./... -v, go vet ./...
+
+      ## TDD Checklist
+      - [ ] Create testdata/integration/ with realistic multi-file JUnit XML reports
+      - [ ] Write integration test: run CLI binary against testdata/integration/
+      - [ ] Verify output file created in correct location
+      - [ ] Verify output contains expected failures grouped by file
+      - [ ] Write integration test: run CLI against single XML file
+      - [ ] Verify output file created in same directory as input file
+      - [ ] Write integration test: run CLI with -o flag
+      - [ ] Verify output written to specified path
+      - [ ] Write integration test: run CLI against directory with no XML files
+      - [ ] Verify "No test failures found!" output
+      - [ ] Build binary: `go build -o junit-to-checklist .`
+      - [ ] Run binary manually: `./junit-to-checklist testdata/integration/`
+      - [ ] Verify binary works from a different working directory
+      - [ ] Verify all tests pass
+
+      ## Drift Policy
+      STOP if: files touched outside testdata/ and main_test.go
+
+      ## Validation
+      go build -o junit-to-checklist . && go test ./... -v && go vet ./...
+    validation:
+      commands:
+        - "go build -o junit-to-checklist ."
+        - "go test ./... -v"
+        - "go vet ./..."
+      expected_output: "Build succeeds, all tests passing, 0 vet errors"
+      failure_handling: "STOP. Revise implementation to pass tests."
+
+  - id: t-m3-003
+    name: "Update README and finalize"
+    estimate_minutes: 30
+    files:
+      touch_only:
+        - README.md
+      modify_only:
+        - README.md
+    instructions: |
+      ## CRITICAL CONSTRAINTS
+      - ONLY modify: README.md
+      - Do NOT delete the Node.js section — add a "Go Version" section alongside it
+
+      ## Steps
+      1. Add "Go Version" section to README with:
+         - Installation: `go install github.com/validkeys/junit-to-checklist@latest`
+         - Usage: `junit-to-checklist <path> [-o output.md]`
+         - Examples for file, directory, and custom output
+         - Build from source instructions
+      2. Keep existing Node.js section as-is (or mark as legacy)
+      3. Verify README renders correctly
+
+      ## Validation
+      go build -o junit-to-checklist . && grep -q 'go install' README.md && grep -q 'Go Version' README.md
+    validation:
+      commands:
+        - "go build -o junit-to-checklist ."
+        - "grep -q 'go install' README.md"
+        - "grep -q 'Go Version' README.md"
+      expected_output: "Build succeeds, README contains Go installation and usage instructions"
+      failure_handling: "STOP. Fix README content before proceeding."
