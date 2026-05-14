@@ -1,0 +1,202 @@
+milestone_id: m1
+name: "Project Scaffolding & XML Parsing"
+
+style_anchors:
+  - path: parse-failures.js
+    lines: "42-79"
+    pattern: "XML parsing loop: readdir → parse → extract failures"
+  - path: parse-failures.js
+    lines: "14-16"
+    pattern: "Module imports and dependency surface area"
+
+global_constraints:
+  dependencies:
+    only_use:
+      - encoding/xml
+      - os
+      - path/filepath
+      - io/fs
+      - fmt
+      - strings
+  file_scope:
+    root: "."
+    stop_if_unexpected_files: true
+  validation:
+    commands:
+      - "go build ./..."
+      - "go test ./... -v"
+      - "go vet ./..."
+    expected_output: "All tests passing, 0 vet errors"
+    failure_handling: "STOP. Fix errors before continuing."
+
+tasks:
+  - id: t-m1-001
+    name: "Initialize Go module and directory structure"
+    estimate_minutes: 30
+    files:
+      touch_only:
+        - go.mod
+        - parser.go
+        - generator.go
+        - main.go
+        - parser_test.go
+        - generator_test.go
+    instructions: |
+      ## CRITICAL CONSTRAINTS
+      - ONLY create files listed above
+      - Module path MUST be: github.com/validkeys/junit-to-checklist
+      - Go version: >= 1.21
+      - Do NOT install Kong yet (that comes in m3)
+      - Do NOT delete any existing Node.js files
+
+      ## Steps
+      1. Run `go mod init github.com/validkeys/junit-to-checklist`
+      2. Create parser.go with package declaration and XML struct definitions only
+      3. Create generator.go with package declaration only
+      4. Create main.go with a minimal `func main() { fmt.Println("junit-to-checklist") }` placeholder
+      5. Create empty test files with package declarations
+      6. Verify `go build ./...` succeeds
+
+      ## Validation
+      go build ./... && go vet ./...
+    validation:
+      commands:
+        - "go build ./..."
+        - "go vet ./..."
+      expected_output: "Build succeeds, 0 errors"
+      failure_handling: "STOP. Resolve build/vet errors before proceeding."
+
+  - id: t-m1-002
+    name: "Define JUnit XML structs and implement parseFile"
+    estimate_minutes: 60
+    dependencies: [t-m1-001]
+    files:
+      touch_only:
+        - parser.go
+        - parser_test.go
+    style_anchors:
+      - path: parse-failures.js
+        lines: "42-79"
+        pattern: "Parse XML → extract suite name, test name, failure message"
+    instructions: |
+      ## CRITICAL CONSTRAINTS
+      - ONLY modify: parser.go, parser_test.go
+      - ONLY use stdlib: encoding/xml, os, fmt, strings
+      - MUST pass: go test ./... -v, go vet ./...
+
+      ## Style Anchors
+      See parse-failures.js:42-79 for the parsing loop pattern to replicate in Go.
+      The JS reads XML files, parses them, and extracts: suite name → test name → failure message.
+
+      ## TDD Checklist
+      - [ ] Write failing test for parseFile with a sample JUnit XML fixture
+      - [ ] Define Go structs: TestSuites, TestSuite, TestCase, Failure with xml tags
+      - [ ] Implement parseFile(path string) ([]Failure, error)
+      - [ ] Verify test passes
+      - [ ] Add test for file with no failures → returns empty slice, no error
+      - [ ] Add test for malformed XML → returns error
+      - [ ] Add test for file with multiple test suites
+
+      ## Struct Definitions
+      Use these structs to map JUnit XML. The exported `Failure` struct is what
+      `parseFile` returns — its fields are populated from the XML hierarchy.
+
+      ```go
+      type TestSuites struct {
+          XMLName    xml.Name    `xml:"testsuites"`
+          TestSuites []TestSuite `xml:"testsuite"`
+      }
+
+      type TestSuite struct {
+          Name      string     `xml:"name,attr"`
+          TestCases []TestCase `xml:"testcase"`
+      }
+
+      type TestCase struct {
+          Name     string     `xml:"name,attr"`
+          Failures []TestCaseFailure `xml:"failure"`
+      }
+
+      // TestCaseFailure maps the <failure> XML element inside a <testcase>.
+      type TestCaseFailure struct {
+          Message string `xml:"message,attr"`
+      }
+
+      // Failure is the flattened, exported result returned by parseFile/parseDir/Parse.
+      // File comes from TestSuite.Name, Test from TestCase.Name, Message from TestCaseFailure.Message.
+      type Failure struct {
+          File    string
+          Test    string
+          Message string
+      }
+      ```
+      Match the JS behavior exactly: suite name → File, test name → Test, failure message → Message.
+
+      ## Test Fixtures
+      Create a `testdata/` directory with:
+      - `single-suite.xml` — one testsuite with 2 testcases, 1 failure
+      - `no-failures.xml` — one testsuite with passing tests only
+      - `malformed.xml` — invalid XML content
+      - `multi-suite.xml` — two testsuites each with failures
+
+      ## Drift Policy
+      STOP if: files touched >4 (parser.go, parser_test.go, testdata/*), new dependencies
+
+      ## Validation
+      go test ./... -v && go vet ./...
+    validation:
+      commands:
+        - "go test ./... -v"
+        - "go vet ./..."
+      expected_output: "All tests passing, 0 vet errors"
+      failure_handling: "STOP. Revise implementation to pass tests."
+
+  - id: t-m1-003
+    name: "Implement parseDir and unified Parse entrypoint"
+    estimate_minutes: 60
+    dependencies: [t-m1-002]
+    files:
+      touch_only:
+        - parser.go
+        - parser_test.go
+    style_anchors:
+      - path: parse-failures.js
+        lines: "46"
+        pattern: "Read directory, filter .xml files"
+    instructions: |
+      ## CRITICAL CONSTRAINTS
+      - ONLY modify: parser.go, parser_test.go
+      - ONLY use stdlib: os, path/filepath, io/fs
+      - MUST pass: go test ./... -v, go vet ./...
+
+      ## Style Anchors
+      See parse-failures.js:46 for the directory reading pattern:
+      `fs.readdirSync(directory).filter(file => file.endsWith('.xml'))`
+
+      ## TDD Checklist
+      - [ ] Write failing test for parseDir with testdata/ directory
+      - [ ] Implement parseDir(dir string) ([]Failure, error) — read all .xml files, parse each
+      - [ ] Write failing test for Parse with a file path
+      - [ ] Write failing test for Parse with a directory path
+      - [ ] Implement Parse(path string) ([]Failure, error) — uses os.Stat to detect file vs dir
+      - [ ] Add test for non-existent path → error
+      - [ ] Add test for empty directory → returns empty slice, no error
+      - [ ] Verify all tests pass
+
+      ## Key Behavior
+      - Parse(path) checks os.Stat: if file → parseFile, if dir → parseDir
+      - parseDir reads all .xml files (non-recursive, matching current JS behavior)
+      - parseDir continues on individual file parse errors (logs to fmt.Errorf but continues)
+      - Empty directory returns empty slice with no error
+
+      ## Drift Policy
+      STOP if: files touched >2, new dependencies introduced
+
+      ## Validation
+      go test ./... -v && go vet ./...
+    validation:
+      commands:
+        - "go test ./... -v"
+        - "go vet ./..."
+      expected_output: "All tests passing, 0 vet errors"
+      failure_handling: "STOP. Revise implementation to pass tests."

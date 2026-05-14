@@ -1,0 +1,46 @@
+milestones:
+  - id: m1
+    name: "Project Scaffolding & XML Parsing"
+    description: |
+      Initialize Go module, define JUnit XML structs, implement file and directory
+      parsing to extract test failures. Includes unit tests for the parser.
+    estimated_days: 1
+    dependencies: []
+    success_criteria:
+      - "go build ./... succeeds with no errors"
+      - "parseFile correctly extracts failures from JUnit XML fixtures"
+      - "parseDir reads all .xml files in a directory and aggregates failures"
+      - "Parse auto-detects file vs directory input via os.Stat"
+      - "All edge cases handled: empty dir, malformed XML, no failures, multi-suite"
+      - "go test ./... -v and go vet ./... pass with zero failures"
+    tasks_file: milestone-m1.tasks.yaml
+
+  - id: m2
+    name: "Markdown Generation & HTML Cleaning"
+    description: |
+      Port the checklist generator and HTML/ANSI cleaning logic from the Node.js
+      implementation. Includes unit tests for both the generator and cleaner.
+    estimated_days: 1
+    dependencies: [m1]
+    success_criteria:
+      - "cleanHTMLBlocks strips HTML blocks, ANSI codes, and Ignored nodes lines"
+      - "generateChecklist produces markdown matching JS implementation format exactly"
+      - "Failures are grouped by file with deterministic (sorted) ordering"
+      - "Empty failures returns '✓ No test failures found!'"
+      - "go test ./... -v and go vet ./... pass with zero failures"
+    tasks_file: milestone-m2.tasks.yaml
+
+  - id: m3
+    name: "CLI with Kong, Integration, and Distribution"
+    description: |
+      Wire everything together with Kong CLI, add integration tests, update README,
+      and verify the binary installs and runs correctly from any directory.
+    estimated_days: 1
+    dependencies: [m1, m2]
+    success_criteria:
+      - "CLI accepts required <path> argument and optional -o flag via Kong"
+      - "Binary builds successfully: go build -o junit-to-checklist ."
+      - "Integration tests cover: directory input, single file, -o flag, no XML files"
+      - "README contains Go installation and usage instructions"
+      - "go test ./... -v and go vet ./... pass with zero failures"
+    tasks_file: milestone-m3.tasks.yaml
