@@ -39,6 +39,17 @@ go build -o junit-to-checklist .
 # Move to your preferred location in PATH
 ```
 
+**Building with version info:**
+
+```bash
+# Set version info via ldflags
+go build -ldflags "\
+  -X main.version=1.0.0 \
+  -X main.commit=$(git rev-parse HEAD) \
+  -X main.date=$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
+  -o junit-to-checklist .
+```
+
 ## Usage
 
 ```bash

@@ -8,6 +8,8 @@ import (
 )
 
 // ansiPattern matches ANSI color codes in the form [<digits>m
+// Covers common terminal color codes (e.g., [36m, [39m, [90m, [1m, [22m)
+// used by test frameworks like Vitest, Jest, and Playwright
 var ansiPattern = regexp.MustCompile(`\[\d+m`)
 
 // cleanHTMLBlocks strips HTML blocks (between <html> tags), ANSI color codes, and 'Ignored nodes' lines from text. Lines that are empty after cleaning are removed. Returns cleaned text with remaining lines joined.

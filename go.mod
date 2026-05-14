@@ -2,4 +2,4 @@ module github.com/validkeys/junit-to-checklist
 
 go 1.26.3
 
-require github.com/alecthomas/kong v1.15.0 // indirect
+require github.com/alecthomas/kong v1.15.0

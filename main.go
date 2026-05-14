@@ -36,12 +36,12 @@ func main() {
 
 	// Path is required if not showing version
 	if cli.Path == "" {
-		fmt.Fprintf(os.Stderr, "Error: <path> argument is required\n")
+		fmt.Fprintf(os.Stderr, "error: <path> argument is required\n")
 		os.Exit(1)
 	}
 
 	if err := run(); err != nil {
-		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+		fmt.Fprintf(os.Stderr, "error: %v\n", err)
 		os.Exit(1)
 	}
 }

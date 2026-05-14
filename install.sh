@@ -44,7 +44,10 @@ fi
 # Verify installation
 if command -v junit-to-checklist &> /dev/null; then
     echo -e "${GREEN}✓ Successfully installed junit-to-checklist${NC}"
-    junit-to-checklist --version
+    if ! junit-to-checklist --version; then
+        echo -e "${RED}Error: Binary installed but --version check failed${NC}"
+        exit 1
+    fi
 else
     echo -e "${YELLOW}⚠ Installation complete, but junit-to-checklist not found in PATH${NC}"
     echo "You may need to restart your shell or run: hash -r"

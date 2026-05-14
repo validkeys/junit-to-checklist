@@ -173,7 +173,7 @@ func TestCLI_NonExistentPath(t *testing.T) {
 
 	// Should print error to stderr
 	outputStr := string(output)
-	if !strings.Contains(outputStr, "Error:") {
+	if !strings.Contains(outputStr, "error:") {
 		t.Errorf("Expected error message, got: %s", outputStr)
 	}
 }

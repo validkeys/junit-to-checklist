@@ -86,7 +86,7 @@ func parseDir(dir string) ([]Failure, error) {
 		path := filepath.Join(dir, entry.Name())
 		failures, err := parseFile(path)
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "Warning: failed to parse %s: %v\n", path, err)
+			fmt.Fprintf(os.Stderr, "warning: failed to parse %s: %v\n", path, err)
 			continue
 		}
 		allFailures = append(allFailures, failures...)
