@@ -1,7 +1,6 @@
 package main
 
 import (
-	"os"
 	"testing"
 )
 
@@ -95,13 +94,9 @@ func TestParseDir(t *testing.T) {
 
 func TestParseDir_Empty(t *testing.T) {
 	// Create empty temp directory
-	err := os.MkdirAll("testdata/empty", 0755)
-	if err != nil {
-		t.Fatalf("failed to create empty dir: %v", err)
-	}
-	defer os.RemoveAll("testdata/empty")
+	emptyDir := t.TempDir()
 
-	failures, err := parseDir("testdata/empty")
+	failures, err := parseDir(emptyDir)
 	if err != nil {
 		t.Fatalf("parseDir failed: %v", err)
 	}

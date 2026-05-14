@@ -7,12 +7,14 @@ import (
 	"strings"
 )
 
-// cleanHTMLBlocks strips HTML blocks, ANSI color codes, and "Ignored nodes" lines.
+// ansiPattern matches ANSI color codes in the form [<digits>m
+var ansiPattern = regexp.MustCompile(`\[\d+m`)
+
+// cleanHTMLBlocks strips HTML blocks (between <html> tags), ANSI color codes, and 'Ignored nodes' lines from text. Lines that are empty after cleaning are removed. Returns cleaned text with remaining lines joined.
 func cleanHTMLBlocks(text string) string {
 	lines := strings.Split(text, "\n")
 	var cleaned []string
 	inHTMLBlock := false
-	ansiPattern := regexp.MustCompile(`\[\d+m`)
 
 	for _, line := range lines {
 		// Detect HTML block start
@@ -51,7 +53,7 @@ func cleanHTMLBlocks(text string) string {
 	return strings.Join(cleaned, "\n")
 }
 
-// generateChecklist generates markdown checklist from failures.
+// generateChecklist generates a markdown checklist from test failures. Failures are grouped by file with deterministic (sorted) ordering. Empty failure list returns a success message. Output is passed through cleanHTMLBlocks before returning.
 func generateChecklist(failures []Failure) string {
 	var output strings.Builder
 
@@ -108,6 +110,7 @@ func generateChecklist(failures []Failure) string {
 		output.WriteString(fmt.Sprintf("## %s\n\n", file))
 
 		for _, failure := range grouped[file] {
+			// Checkbox uses file name (matches JS implementation line 229)
 			output.WriteString(fmt.Sprintf("- [ ] **%s**\n\n", file))
 			output.WriteString(fmt.Sprintf("  - **Test:** %s\n", failure.Test))
 
