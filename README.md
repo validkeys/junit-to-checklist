@@ -1,6 +1,6 @@
 # JUnit to Checklist
 
-A simple Node.js script that parses JUnit XML test reports and generates a markdown checklist of test failures.
+A tool that parses JUnit XML test reports and generates a markdown checklist of test failures. Available in both Go (recommended) and Node.js versions.
 
 ## What It Does
 
@@ -12,13 +12,59 @@ This tool reads JUnit XML reports from your CI/CD pipeline and creates an AI-opt
 - Failure messages showing expected vs actual results
 - Grouped by source file for easy navigation
 
-## Installation
+## Go Version
+
+### Installation
+
+```bash
+go install github.com/validkeys/junit-to-checklist@latest
+```
+
+Or build from source:
+
+```bash
+git clone https://github.com/validkeys/junit-to-checklist.git
+cd junit-to-checklist
+go build -o junit-to-checklist .
+```
+
+### Usage
+
+```bash
+# Parse a single XML file
+junit-to-checklist path/to/report.xml
+
+# Parse all XML files in a directory
+junit-to-checklist path/to/reports
+
+# Specify custom output location
+junit-to-checklist path/to/reports -o custom-output.md
+```
+
+By default, the output file `failing-tests.md` is created in the same directory as the input.
+
+### Examples
+
+```bash
+# Parse CI reports directory
+junit-to-checklist ./junit-reports
+
+# Parse single test result
+junit-to-checklist ./test-results/backend-tests.xml
+
+# Write to specific location
+junit-to-checklist ./junit-reports -o ./docs/test-failures.md
+```
+
+## Node.js Version (Legacy)
+
+### Installation
 
 ```bash
 npm install
 ```
 
-## Usage
+### Usage
 
 ```bash
 # Parse reports from the default ./junit-reports directory
