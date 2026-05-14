@@ -1,6 +1,4 @@
-// Package main implements a JUnit XML parser that converts test failure
-// reports into markdown checklists optimized for AI-assisted debugging.
-package main
+package parser
 
 import (
 	"encoding/xml"
@@ -9,37 +7,31 @@ import (
 	"path/filepath"
 )
 
-// TestSuites maps the root <testsuites> element in JUnit XML.
 type TestSuites struct {
 	XMLName    xml.Name    `xml:"testsuites"`
 	TestSuites []TestSuite `xml:"testsuite"`
 }
 
-// TestSuite maps a <testsuite> element containing test cases.
 type TestSuite struct {
 	Name      string     `xml:"name,attr"`
 	TestCases []TestCase `xml:"testcase"`
 }
 
-// TestCase maps a <testcase> element with optional failure elements.
 type TestCase struct {
 	Name     string            `xml:"name,attr"`
 	Failures []TestCaseFailure `xml:"failure"`
 }
 
-// TestCaseFailure maps the <failure> element within a test case, containing the failure message attribute.
 type TestCaseFailure struct {
 	Message string `xml:"message,attr"`
 }
 
-// Failure represents a single test failure with file, test name, and error message extracted from JUnit XML hierarchy.
 type Failure struct {
 	File    string
 	Test    string
 	Message string
 }
 
-// parseFile reads a JUnit XML file and extracts all test failures into a flat list.
 func parseFile(path string) ([]Failure, error) {
 	data, err := os.ReadFile(path)
 	if err != nil {
@@ -67,7 +59,6 @@ func parseFile(path string) ([]Failure, error) {
 	return failures, nil
 }
 
-// parseDir reads all .xml files in a directory (non-recursive) and aggregates failures from each file. Parse errors for individual files are logged to stderr but do not halt processing.
 func parseDir(dir string) ([]Failure, error) {
 	entries, err := os.ReadDir(dir)
 	if err != nil {
@@ -95,7 +86,6 @@ func parseDir(dir string) ([]Failure, error) {
 	return allFailures, nil
 }
 
-// Parse auto-detects whether path is a file or directory using os.Stat and delegates to parseFile or parseDir accordingly.
 func Parse(path string) ([]Failure, error) {
 	info, err := os.Stat(path)
 	if err != nil {

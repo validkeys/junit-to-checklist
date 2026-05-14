@@ -1,50 +1,42 @@
-package main
+package generator
 
 import (
 	"fmt"
 	"regexp"
 	"sort"
 	"strings"
+
+	"github.com/validkeys/junit-to-checklist/internal/parser"
 )
 
-// ansiPattern matches ANSI color codes in the form [<digits>m
-// Covers common terminal color codes (e.g., [36m, [39m, [90m, [1m, [22m)
-// used by test frameworks like Vitest, Jest, and Playwright
 var ansiPattern = regexp.MustCompile(`\[\d+m`)
 
-// cleanHTMLBlocks strips HTML blocks (between <html> tags), ANSI color codes, and 'Ignored nodes' lines from text. Lines that are empty after cleaning are removed. Returns cleaned text with remaining lines joined.
 func cleanHTMLBlocks(text string) string {
 	lines := strings.Split(text, "\n")
 	var cleaned []string
 	inHTMLBlock := false
 
 	for _, line := range lines {
-		// Detect HTML block start
 		if strings.Contains(line, "[36m<html>[39m") || strings.Contains(line, "[36m<html>") {
 			inHTMLBlock = true
 			continue
 		}
 
-		// Detect HTML block end
 		if inHTMLBlock && (strings.Contains(line, "[36m</html>[39m") || strings.Contains(line, "</html>[39m")) {
 			inHTMLBlock = false
 			continue
 		}
 
-		// Skip lines inside HTML block
 		if inHTMLBlock {
 			continue
 		}
 
-		// Skip "Ignored nodes" lines
 		if strings.Contains(line, "Ignored nodes: comments, script, style") {
 			continue
 		}
 
-		// Strip ANSI codes
 		line = ansiPattern.ReplaceAllString(line, "")
 
-		// Skip empty/whitespace lines after cleaning
 		if strings.TrimSpace(line) == "" {
 			continue
 		}
@@ -55,8 +47,7 @@ func cleanHTMLBlocks(text string) string {
 	return strings.Join(cleaned, "\n")
 }
 
-// generateChecklist generates a markdown checklist from test failures. Failures are grouped by file with deterministic (sorted) ordering. Empty failure list returns a success message. Output is passed through cleanHTMLBlocks before returning.
-func generateChecklist(failures []Failure) string {
+func GenerateChecklist(failures []parser.Failure) string {
 	var output strings.Builder
 
 	if len(failures) == 0 {
@@ -65,7 +56,6 @@ func generateChecklist(failures []Failure) string {
 
 	output.WriteString("# Test Failures Checklist\n\n")
 
-	// AI instructions section
 	output.WriteString("## Instructions for AI\n\n")
 	output.WriteString("**Work through these tests ONE AT A TIME.** After fixing each test:\n")
 	output.WriteString("1. Update the checkbox from `- [ ]` to `- [x]`\n")
@@ -94,29 +84,24 @@ func generateChecklist(failures []Failure) string {
 	output.WriteString("6. Present the root cause to the user along with a proposed solution. If there are several options, present the options for solving.\n\n")
 	output.WriteString("---\n\n")
 
-	// Group failures by file
-	grouped := make(map[string][]Failure)
+	grouped := make(map[string][]parser.Failure)
 	for _, failure := range failures {
 		grouped[failure.File] = append(grouped[failure.File], failure)
 	}
 
-	// Sort file names for deterministic output
 	var files []string
 	for file := range grouped {
 		files = append(files, file)
 	}
 	sort.Strings(files)
 
-	// Generate checklist per file
 	for _, file := range files {
 		output.WriteString(fmt.Sprintf("## %s\n\n", file))
 
 		for _, failure := range grouped[file] {
-			// Checkbox uses file name (matches JS implementation line 229)
 			output.WriteString(fmt.Sprintf("- [ ] **%s**\n\n", file))
 			output.WriteString(fmt.Sprintf("  - **Test:** %s\n", failure.Test))
 
-			// Split message into lines and filter empty
 			messageLines := strings.Split(failure.Message, "\n")
 			var filteredLines []string
 			for _, line := range messageLines {
@@ -138,6 +123,5 @@ func generateChecklist(failures []Failure) string {
 
 	output.WriteString(fmt.Sprintf("\n**Total failures: %d**\n", len(failures)))
 
-	// Clean HTML blocks before returning
 	return cleanHTMLBlocks(output.String())
 }

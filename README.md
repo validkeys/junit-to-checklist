@@ -35,7 +35,7 @@ go install github.com/validkeys/junit-to-checklist@latest
 ```bash
 git clone https://github.com/validkeys/junit-to-checklist.git
 cd junit-to-checklist
-go build -o junit-to-checklist .
+go build -o junit-to-checklist ./cmd/junit-to-checklist
 # Move to your preferred location in PATH
 ```
 
@@ -47,7 +47,7 @@ go build -ldflags "\
   -X main.version=1.0.0 \
   -X main.commit=$(git rev-parse HEAD) \
   -X main.date=$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
-  -o junit-to-checklist .
+  -o junit-to-checklist ./cmd/junit-to-checklist
 ```
 
 ## Usage

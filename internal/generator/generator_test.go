@@ -1,8 +1,10 @@
-package main
+package generator
 
 import (
 	"strings"
 	"testing"
+
+	"github.com/validkeys/junit-to-checklist/internal/parser"
 )
 
 func TestCleanHTMLBlocks_HTMLBlock(t *testing.T) {
@@ -99,17 +101,17 @@ func TestCleanHTMLBlocks_EmptyAfterClean(t *testing.T) {
 }
 
 func TestGenerateChecklist_Empty(t *testing.T) {
-	failures := []Failure{}
+	failures := []parser.Failure{}
 	expected := "✓ No test failures found!\n"
 
-	result := generateChecklist(failures)
+	result := GenerateChecklist(failures)
 	if result != expected {
 		t.Errorf("Empty failures not handled correctly.\nGot:\n%s\nExpected:\n%s", result, expected)
 	}
 }
 
 func TestGenerateChecklist_SingleFailure(t *testing.T) {
-	failures := []Failure{
+	failures := []parser.Failure{
 		{
 			File:    "auth.test.ts",
 			Test:    "login should fail with invalid password",
@@ -117,9 +119,8 @@ func TestGenerateChecklist_SingleFailure(t *testing.T) {
 		},
 	}
 
-	result := generateChecklist(failures)
+	result := GenerateChecklist(failures)
 
-	// Check key parts exist
 	if !strings.Contains(result, "# Test Failures Checklist") {
 		t.Error("Missing header")
 	}
@@ -147,7 +148,7 @@ func TestGenerateChecklist_SingleFailure(t *testing.T) {
 }
 
 func TestGenerateChecklist_MultipleFailuresSameFile(t *testing.T) {
-	failures := []Failure{
+	failures := []parser.Failure{
 		{
 			File:    "api.test.ts",
 			Test:    "GET /users should return list",
@@ -160,15 +161,13 @@ func TestGenerateChecklist_MultipleFailuresSameFile(t *testing.T) {
 		},
 	}
 
-	result := generateChecklist(failures)
+	result := GenerateChecklist(failures)
 
-	// Should have one file heading for grouped failures
 	fileHeadingCount := strings.Count(result, "## api.test.ts")
 	if fileHeadingCount != 1 {
 		t.Errorf("Expected 1 file heading for api.test.ts, got %d", fileHeadingCount)
 	}
 
-	// Should have 2 checkboxes
 	checkboxCount := strings.Count(result, "- [ ] **api.test.ts**")
 	if checkboxCount != 2 {
 		t.Errorf("Expected 2 checkboxes, got %d", checkboxCount)
@@ -180,7 +179,7 @@ func TestGenerateChecklist_MultipleFailuresSameFile(t *testing.T) {
 }
 
 func TestGenerateChecklist_MultipleFiles(t *testing.T) {
-	failures := []Failure{
+	failures := []parser.Failure{
 		{
 			File:    "auth.test.ts",
 			Test:    "login test",
@@ -193,7 +192,7 @@ func TestGenerateChecklist_MultipleFiles(t *testing.T) {
 		},
 	}
 
-	result := generateChecklist(failures)
+	result := GenerateChecklist(failures)
 
 	if !strings.Contains(result, "## auth.test.ts") {
 		t.Error("Missing auth.test.ts heading")
@@ -204,7 +203,7 @@ func TestGenerateChecklist_MultipleFiles(t *testing.T) {
 }
 
 func TestGenerateChecklist_MultilineError(t *testing.T) {
-	failures := []Failure{
+	failures := []parser.Failure{
 		{
 			File:    "test.ts",
 			Test:    "sample test",
@@ -212,7 +211,7 @@ func TestGenerateChecklist_MultilineError(t *testing.T) {
 		},
 	}
 
-	result := generateChecklist(failures)
+	result := GenerateChecklist(failures)
 
 	if !strings.Contains(result, "- Error line 1") {
 		t.Error("Missing error line 1")
@@ -226,7 +225,7 @@ func TestGenerateChecklist_MultilineError(t *testing.T) {
 }
 
 func TestGenerateChecklist_HTMLCleaning(t *testing.T) {
-	failures := []Failure{
+	failures := []parser.Failure{
 		{
 			File:    "test.ts",
 			Test:    "html test",
@@ -234,9 +233,8 @@ func TestGenerateChecklist_HTMLCleaning(t *testing.T) {
 		},
 	}
 
-	result := generateChecklist(failures)
+	result := GenerateChecklist(failures)
 
-	// HTML block should be stripped
 	if strings.Contains(result, "<html>") || strings.Contains(result, "<body>") {
 		t.Error("HTML block not cleaned from output")
 	}

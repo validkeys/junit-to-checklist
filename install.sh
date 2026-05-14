@@ -11,7 +11,7 @@ echo "Installing junit-to-checklist..."
 
 # Build binary
 echo "Building binary..."
-go build -o junit-to-checklist .
+go build -o junit-to-checklist ./cmd/junit-to-checklist
 
 # Determine install location
 if [ -w "/usr/local/bin" ]; then

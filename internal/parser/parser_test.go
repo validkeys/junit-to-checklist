@@ -1,11 +1,11 @@
-package main
+package parser
 
 import (
 	"testing"
 )
 
 func TestParseFile_SingleSuite(t *testing.T) {
-	failures, err := parseFile("testdata/single-suite.xml")
+	failures, err := parseFile("../../testdata/single-suite.xml")
 	if err != nil {
 		t.Fatalf("parseFile failed: %v", err)
 	}
@@ -27,7 +27,7 @@ func TestParseFile_SingleSuite(t *testing.T) {
 }
 
 func TestParseFile_NoFailures(t *testing.T) {
-	failures, err := parseFile("testdata/no-failures.xml")
+	failures, err := parseFile("../../testdata/no-failures.xml")
 	if err != nil {
 		t.Fatalf("parseFile failed: %v", err)
 	}
@@ -38,14 +38,14 @@ func TestParseFile_NoFailures(t *testing.T) {
 }
 
 func TestParseFile_Malformed(t *testing.T) {
-	_, err := parseFile("testdata/malformed.xml")
+	_, err := parseFile("../../testdata/malformed.xml")
 	if err == nil {
 		t.Fatal("expected error for malformed XML, got nil")
 	}
 }
 
 func TestParseFile_MultiSuite(t *testing.T) {
-	failures, err := parseFile("testdata/multi-suite.xml")
+	failures, err := parseFile("../../testdata/multi-suite.xml")
 	if err != nil {
 		t.Fatalf("parseFile failed: %v", err)
 	}
@@ -54,7 +54,6 @@ func TestParseFile_MultiSuite(t *testing.T) {
 		t.Fatalf("expected 2 failures, got %d", len(failures))
 	}
 
-	// First failure from api.test.ts
 	f0 := failures[0]
 	if f0.File != "api.test.ts" {
 		t.Errorf("expected failures[0].File='api.test.ts', got '%s'", f0.File)
@@ -66,7 +65,6 @@ func TestParseFile_MultiSuite(t *testing.T) {
 		t.Errorf("expected failures[0].Message='Timeout after 5000ms', got '%s'", f0.Message)
 	}
 
-	// Second failure from db.test.ts
 	f1 := failures[1]
 	if f1.File != "db.test.ts" {
 		t.Errorf("expected failures[1].File='db.test.ts', got '%s'", f1.File)
@@ -80,20 +78,17 @@ func TestParseFile_MultiSuite(t *testing.T) {
 }
 
 func TestParseDir(t *testing.T) {
-	failures, err := parseDir("testdata")
+	failures, err := parseDir("../../testdata")
 	if err != nil {
 		t.Fatalf("parseDir failed: %v", err)
 	}
 
-	// testdata has: single-suite.xml (1), multi-suite.xml (2), no-failures.xml (0), malformed.xml (error)
-	// Total expected: 3 failures (malformed should be skipped/logged but not fatal)
 	if len(failures) != 3 {
 		t.Errorf("expected 3 failures from testdata, got %d", len(failures))
 	}
 }
 
 func TestParseDir_Empty(t *testing.T) {
-	// Create empty temp directory
 	emptyDir := t.TempDir()
 
 	failures, err := parseDir(emptyDir)
@@ -107,7 +102,7 @@ func TestParseDir_Empty(t *testing.T) {
 }
 
 func TestParse_File(t *testing.T) {
-	failures, err := Parse("testdata/single-suite.xml")
+	failures, err := Parse("../../testdata/single-suite.xml")
 	if err != nil {
 		t.Fatalf("Parse failed: %v", err)
 	}
@@ -118,7 +113,7 @@ func TestParse_File(t *testing.T) {
 }
 
 func TestParse_Directory(t *testing.T) {
-	failures, err := Parse("testdata")
+	failures, err := Parse("../../testdata")
 	if err != nil {
 		t.Fatalf("Parse failed: %v", err)
 	}
