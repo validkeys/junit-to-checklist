@@ -1,5 +1,5 @@
 # Go build artifacts
-junit-to-checklist
+/junit-to-checklist
 *.exe
 *.dll
 *.so
